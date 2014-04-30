@@ -39,8 +39,8 @@ class BlockTemplate(halfnode.CBlock):
         self.timedelta = 0
         self.curtime = 0
         self.target = 0
-        self.nSuperBlock = ''
-        self.nRoundMask = ''
+        self.nSuperBlock = ''                 # JACKPOT    
+        self.nRoundMask = ''                  # JACKPOT 
         #self.coinbase_hex = None 
         self.merkletree = None
                 
@@ -73,8 +73,8 @@ class BlockTemplate(halfnode.CBlock):
         self.hashMerkleRoot = 0
         self.nTime = 0
         self.nNonce = 0
-        self.nSuperBlock = data['superblock']
-        self.nRoundMask = data['roundmask']
+        self.nSuperBlock = data['superblock']                              # JACKPOT
+        self.nRoundMask = data['roundmask']                                # JACKPOT
         self.vtx = [ coinbase, ]
         
         for tx in data['transactions']:
@@ -115,10 +115,13 @@ class BlockTemplate(halfnode.CBlock):
         version = binascii.hexlify(struct.pack(">i", self.nVersion))
         nbits = binascii.hexlify(struct.pack(">I", self.nBits))
         ntime = binascii.hexlify(struct.pack(">I", self.curtime))
-        nsuperblock = binascii.hexlify(struct.pack(">i", self.nSuperBlock))
-        nroundmask = binascii.hexlify(struct.pack(">i", self.nRoundMask))
+        nsuperblock = binascii.hexlify(struct.pack(">i", self.nSuperBlock))         # JACKPOT
+        nroundmask = binascii.hexlify(struct.pack(">i", self.nRoundMask))           # JACKPOT
         clean_jobs = True
         
+        #
+        # add two fields on returning args
+        #
         return (job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs, nsuperblock, nroundmask)
 
     def serialize_coinbase(self, extranonce1, extranonce2):
@@ -152,8 +155,8 @@ class BlockTemplate(halfnode.CBlock):
             r += struct.pack(">I", self.nBits)
         r += nonce_bin    
         if settings.COINDAEMON_ALGO == 'jackpotcoin':
-           r += struct.pack(">i", self.nSuperBlock)
-           r += struct.pack(">i", self.nRoundMask)
+           r += struct.pack(">i", self.nSuperBlock)               # serialize with BE for JACKPOT 
+           r += struct.pack(">i", self.nRoundMask)                # serialize with BE for JACKPT 
         return r   
            
     def finalize(self, merkle_root_int, extranonce1_bin, extranonce2_bin, ntime, nonce):

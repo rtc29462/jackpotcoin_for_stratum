@@ -4,7 +4,8 @@ import util
 import StringIO
 import settings
 
-import jackpotcoin_hash
+# JACKPOT : hashing import
+import jackpotcoin_hash               
 
 from twisted.internet import defer
 from lib.exceptions import SubmitException
@@ -143,6 +144,7 @@ class TemplateRegistry(object):
 
     def diff_to_target(self, difficulty):
         '''Converts difficulty to target'''
+        '''JACKPOT diff1 is same as scrypt''' 
         if settings.COINDAEMON_ALGO == 'scrypt':
             diff1 = 0x0000ffff00000000000000000000000000000000000000000000000000000000
         elif settings.COINDAEMON_ALGO == 'jackpotcoin':
@@ -235,6 +237,7 @@ class TemplateRegistry(object):
         header_bin = job.serialize_header(merkle_root_int, ntime_bin, nonce_bin)
       
         # 4. Reverse header and compare it with target of the user
+        # JACKPOT - need to get 88 bytes (22x4)
         if settings.COINDAEMON_ALGO == 'scrypt':
             hash_bin = ltc_scrypt.getPoWHash(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 20) ]))
         elif settings.COINDAEMON_ALGO == 'jackpotcoin':
@@ -245,6 +248,8 @@ class TemplateRegistry(object):
         hash_int = util.uint256_from_str(hash_bin)
         scrypt_hash_hex = "%064x" % hash_int
         header_hex = binascii.hexlify(header_bin)
+        
+        # JACKPOT - 40bytes padding
         if settings.COINDAEMON_ALGO == 'scrypt':
             header_hex = header_hex+"000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000"
         elif settings.COINDAEMON_ALGO == 'jackpotcoin':
@@ -269,6 +274,7 @@ class TemplateRegistry(object):
             log.info("We found a block candidate! %s" % scrypt_hash_hex)
 
             # Reverse the header and get the potential block hash (for scrypt only)
+            # JACKPOT - 22x4 bytes 
             if settings.COINDAEMON_ALGO == 'jackpotcoin':
             	  block_hash_bin = util.doublesha(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 22) ]))
             else:
@@ -295,6 +301,7 @@ class TemplateRegistry(object):
 
         if settings.SOLUTION_BLOCK_HASH:
         # Reverse the header and get the potential block hash (for scrypt only) only do this if we want to send in the block hash to the shares table
+        # JACKPOT - 22x4 bytes 
             if settings.COINDAEMON_ALGO == 'jackpotcoin':
                 block_hash_bin = util.doublesha(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 22) ]))
             else:

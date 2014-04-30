@@ -19,6 +19,7 @@ class MiningSubscription(Subscription):
         start = Interfaces.timestamper.time()
         clean_jobs = is_new_block
         
+        # JACKPOT : added last two 
         (job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, _, nsuperblock, nroundmask) = \
             Interfaces.template_registry.get_last_broadcast_args()
 
@@ -31,9 +32,11 @@ class MiningSubscription(Subscription):
                     if session['authorized'].keys():
                         worker_name = session['authorized'].keys()[0]
                         difficulty = session['difficulty']
-                        work_id = Interfaces.worker_manager.register_work(worker_name, job_id, difficulty)             
+                        work_id = Interfaces.worker_manager.register_work(worker_name, job_id, difficulty)      
+                        # JACKPOT : emit two more field on the last       
                         subscription.emit_single(work_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs, nsuperblock, nroundmask)
                     else:
+                        # JACKPOT : emit two more field on the last       
                         subscription.emit_single(job_id,  prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, clean_jobs, nsuperblock, nroundmask)
             except Exception as e:
                 log.exception("Error broadcasting work to client %s" % str(e))
@@ -44,7 +47,8 @@ class MiningSubscription(Subscription):
         
     def _finish_after_subscribe(self, result):
         '''Send new job to newly subscribed client'''
-        try:        
+        try:
+            # JACKPOT : emit two more field on the last               
             (job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, _, nsuperblock, nroundmask) = \
                         Interfaces.template_registry.get_last_broadcast_args()
         except Exception:
@@ -57,6 +61,7 @@ class MiningSubscription(Subscription):
         
         # Force client to remove previous jobs if any (eg. from previous connection)
         clean_jobs = True
+        # JACKPOT : emit two more field on the last               
         self.emit_single(job_id, prevhash, coinb1, coinb2, merkle_branch, version, nbits, ntime, True, nsuperblock, nroundmask)
         
         return result

@@ -21,6 +21,7 @@ import lib.logger
 log = lib.logger.get_logger('halfnode')
 
 log.debug("########################################### Loading JackpotCoin Support #########################################################")
+# JACKPOT - impoart JACKPT hash
 import jackpotcoin_hash
 
 
@@ -213,12 +214,13 @@ class CBlock(object):
         self.nTime = 0
         self.nBits = 0
         self.nNonce = 0
+        # JACKPOT - addtional header 
         if settings.COINDAEMON_ALGO == 'jackpotcoin':
             self.nSuperBlock = 0
             self.nRoundMask = 0
         self.vtx = []
         self.sha256 = None
-        self.jackpotcoin = None
+        self.jackpotcoin = None    # JACKPOT for jackpotcoin hash
         if settings.COINDAEMON_Reward == 'POS':
             self.signature = b""
         else: pass
@@ -230,6 +232,7 @@ class CBlock(object):
         self.nTime = struct.unpack("<I", f.read(4))[0]
         self.nBits = struct.unpack("<I", f.read(4))[0]
         self.nNonce = struct.unpack("<I", f.read(4))[0]
+        # JACKPOT - addtional header 
         if settings.COINDAEMON_ALGO == 'jackpotcoin':
             self.nSuperBlock = struct.unpack("<i", f.read(4))[0]
             self.nRoundMask = struct.unpack("<i", f.read(4))[0]
@@ -246,15 +249,16 @@ class CBlock(object):
         r.append(struct.pack("<I", self.nTime))
         r.append(struct.pack("<I", self.nBits))
         r.append(struct.pack("<I", self.nNonce))
-        r.append(struct.pack("<i", self.nSuperBlock))
-        r.append(struct.pack("<i", self.nRoundMask))
+        r.append(struct.pack("<i", self.nSuperBlock)) # JACKPT addtional header, BE, <i
+        r.append(struct.pack("<i", self.nRoundMask))  # JACKPT addtional header, BE, <i
         r.append(ser_vector(self.vtx))
         if settings.COINDAEMON_Reward == 'POS':
             r.append(ser_string(self.signature))
         else: pass
         return ''.join(r)
-
+   
     def calc_jackpotcoin(self):
+        # JACKPOT 
         if self.jackpotcoin is None:
             r = []
             r.append(struct.pack("<i", self.nVersion))
@@ -263,7 +267,7 @@ class CBlock(object):
             r.append(struct.pack("<I", self.nTime))
             r.append(struct.pack("<I", self.nBits))
             r.append(struct.pack("<I", self.nNonce))
-            r.append(struct.pack("<i", self.nSuperBlock))
+            r.append(struct.pack("<i", self.nSuperBlock))     
             r.append(struct.pack("<i", self.nRoundMask))
             self.jackpotcoin = uint256_from_str(jackpotcoin_hash.gethash(''.join(r)))
         return self.jackpotcoin
@@ -271,6 +275,8 @@ class CBlock(object):
     def is_valid(self):
         self.calc_jackpotcoin()
         target = uint256_from_compact(self.nBits)
+
+        # JACKPOT
         if self.jackpotcoin > target:
             return False
 
