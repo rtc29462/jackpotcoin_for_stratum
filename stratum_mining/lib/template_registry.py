@@ -3,11 +3,9 @@ import binascii
 import util
 import StringIO
 import settings
-if settings.COINDAEMON_ALGO == 'scrypt':
-    import ltc_scrypt
-elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-    import jackpotcoin_hash
-else: pass
+
+import jackpotcoin_hash
+
 from twisted.internet import defer
 from lib.exceptions import SubmitException
 
@@ -266,7 +264,7 @@ class TemplateRegistry(object):
         share_diff = int(self.diff_to_target(hash_int))
 
         # 5. Compare hash with target of the network
-        if (hash_int <= job.target) or (1 < 2):
+        if hash_int <= job.target:
             # Yay! It is block candidate!
             log.info("We found a block candidate! %s" % scrypt_hash_hex)
 
@@ -300,7 +298,7 @@ class TemplateRegistry(object):
             if settings.COINDAEMON_ALGO == 'jackpotcoin':
                 block_hash_bin = util.doublesha(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 22) ]))
             else:
-	              block_hash_bin = util.doublesha(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 20) ]))
+                block_hash_bin = util.doublesha(''.join([ header_bin[i*4:i*4+4][::-1] for i in range(0, 20) ]))
             block_hash_hex = block_hash_bin[::-1].encode('hex_codec')
             return (header_hex, block_hash_hex, share_diff, None)
         else:

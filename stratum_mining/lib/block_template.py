@@ -27,8 +27,7 @@ class BlockTemplate(halfnode.CBlock):
     coinbase_transaction_class = CoinbaseTransaction
     
     def __init__(self, timestamper, coinbaser, job_id):
-        log.debug("Got To  Block_template.py")
-        log.debug("Got To Block_template.py")
+        
         super(BlockTemplate, self).__init__()
         
         self.job_id = job_id 
@@ -40,8 +39,8 @@ class BlockTemplate(halfnode.CBlock):
         self.timedelta = 0
         self.curtime = 0
         self.target = 0
-        self.nSuperBlock = 0
-        self.nRoundMask = 0
+        self.nSuperBlock = ''
+        self.nRoundMask = ''
         #self.coinbase_hex = None 
         self.merkletree = None
                 
@@ -163,10 +162,5 @@ class BlockTemplate(halfnode.CBlock):
         self.hashMerkleRoot = merkle_root_int
         self.nTime = ntime
         self.nNonce = nonce
-        """
-        if settings.COINDAEMON_ALGO == 'jackpotcoin':
-           self.SuperBlock = nsuperblock
-           self.RoundMask = nroundmask
-        """
         self.vtx[0].set_extranonce(extranonce1_bin + extranonce2_bin)        
         self.sha256 = None # We changed block parameters, let's reset sha256 cache

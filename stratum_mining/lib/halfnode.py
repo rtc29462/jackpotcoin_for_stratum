@@ -10,6 +10,7 @@ import time
 import sys
 import random
 import cStringIO
+
 from Crypto.Hash import SHA256
 
 from twisted.internet.protocol import Protocol
@@ -18,33 +19,9 @@ import settings
 
 import lib.logger
 log = lib.logger.get_logger('halfnode')
-log.debug("Got to Halfnode")
 
-if settings.COINDAEMON_ALGO == 'scrypt':
-    log.debug("########################################### Loading LTC Scrypt #########################################################")
-    import ltc_scrypt
-elif settings.COINDAEMON_ALGO == 'quark':
-    log.debug("########################################### Loading Quark Support #########################################################")
-    import quark_hash
-elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-    log.debug("########################################### Loading JackpotCoin Support #########################################################")
-    import jackpotcoin_hash
-else: 
-    log.debug("########################################### Loading SHA256 Support ######################################################")
-
-#if settings.COINDAEMON_Reward == 'POS':
-#        log.debug("########################################### Loading POS Support #########################################################")
-#        pass
-#else:
-#        log.debug("########################################### Loading POW Support ######################################################")
-#        pass
-
-if settings.COINDAEMON_TX == 'yes':
-    log.debug("########################################### Loading SHA256 Transaction Message Support #########################################################")
-    pass
-else:
-    log.debug("########################################### NOT Loading SHA256 Transaction Message Support ######################################################")
-    pass
+log.debug("########################################### Loading JackpotCoin Support #########################################################")
+import jackpotcoin_hash
 
 
 MY_VERSION = 31402
@@ -222,7 +199,7 @@ class CTransaction(object):
     def is_valid(self):
         self.calc_sha256()
         for tout in self.vout:
-            if tout.nValue < 0 or tout.nValue > 21000000L * 100000000L:
+            if tout.nValue < 0:
                 return False
         return True
     def __repr__(self):
@@ -241,11 +218,7 @@ class CBlock(object):
             self.nRoundMask = 0
         self.vtx = []
         self.sha256 = None
-        if settings.COINDAEMON_ALGO == 'scrypt':
-            self.scrypt = None
-        elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-            self.jackpotcoin = None
-        else: pass
+        self.jackpotcoin = None
         if settings.COINDAEMON_Reward == 'POS':
             self.signature = b""
         else: pass
@@ -254,18 +227,12 @@ class CBlock(object):
         self.nVersion = struct.unpack("<i", f.read(4))[0]
         self.hashPrevBlock = deser_uint256(f)
         self.hashMerkleRoot = deser_uint256(f)
-        if settings.COINDAEMON_ALGO == 'riecoin':
-            self.nBits = struct.unpack("<I", f.read(4))[0]
-            self.nTime = struct.unpack("<II", f.read(8))[0]
-            self.nNonce = struct.unpack("<IIIIIIII", f.read(32))[0]
-        else:
-            self.nTime = struct.unpack("<I", f.read(4))[0]
-            self.nBits = struct.unpack("<I", f.read(4))[0]
-            self.nNonce = struct.unpack("<I", f.read(4))[0]
+        self.nTime = struct.unpack("<I", f.read(4))[0]
+        self.nBits = struct.unpack("<I", f.read(4))[0]
+        self.nNonce = struct.unpack("<I", f.read(4))[0]
         if settings.COINDAEMON_ALGO == 'jackpotcoin':
-            self.nSuperBlock = struct.unpack("<I", f.read(4))[0]
-            self.nRoundMask = struct.unpack("<I", f.read(4))[0]
-            
+            self.nSuperBlock = struct.unpack("<i", f.read(4))[0]
+            self.nRoundMask = struct.unpack("<i", f.read(4))[0]
         self.vtx = deser_vector(f, CTransaction)
         if settings.COINDAEMON_Reward == 'POS':
             self.signature = deser_string(f)
@@ -276,14 +243,9 @@ class CBlock(object):
         r.append(struct.pack("<i", self.nVersion))
         r.append(ser_uint256(self.hashPrevBlock))
         r.append(ser_uint256(self.hashMerkleRoot))
-        if settings.COINDAEMON_ALGO == 'riecoin':
-            r.append(struct.pack("<I", self.nBits))
-            r.append(struct.pack("<Q", self.nTime))
-            r.append(ser_uint256(self.nNonce))
-        else:
-            r.append(struct.pack("<I", self.nTime))
-            r.append(struct.pack("<I", self.nBits))
-            r.append(struct.pack("<I", self.nNonce))
+        r.append(struct.pack("<I", self.nTime))
+        r.append(struct.pack("<I", self.nBits))
+        r.append(struct.pack("<I", self.nNonce))
         r.append(struct.pack("<i", self.nSuperBlock))
         r.append(struct.pack("<i", self.nRoundMask))
         r.append(ser_vector(self.vtx))
@@ -292,102 +254,25 @@ class CBlock(object):
         else: pass
         return ''.join(r)
 
-    if settings.COINDAEMON_ALGO == 'scrypt':
-       def calc_scrypt(self):
-           if self.scrypt is None:
-               r = []
-               r.append(struct.pack("<i", self.nVersion))
-               r.append(ser_uint256(self.hashPrevBlock))
-               r.append(ser_uint256(self.hashMerkleRoot))
-               r.append(struct.pack("<I", self.nTime))
-               r.append(struct.pack("<I", self.nBits))
-               r.append(struct.pack("<I", self.nNonce))
-               self.scrypt = uint256_from_str(ltc_scrypt.getPoWHash(''.join(r)))
-           return self.scrypt
-    elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-       def calc_jackpotcoin(self):
-           if self.jackpotcoin is None:
-               r = []
-               r.append(struct.pack("<i", self.nVersion))
-               r.append(ser_uint256(self.hashPrevBlock))
-               r.append(ser_uint256(self.hashMerkleRoot))
-               r.append(struct.pack("<I", self.nTime))
-               r.append(struct.pack("<I", self.nBits))
-               r.append(struct.pack("<I", self.nNonce))
-               r.append(struct.pack("<i", self.nSuperBlock))
-               r.append(struct.pack("<i", self.nRoundMask))
-               self.jackpotcoin = uint256_from_str(jackpotcoin_hash.gethash(''.join(r)))
-           return self.jackpotcoin
-    elif settings.COINDAEMON_ALGO == 'quark':
-         def calc_quark(self):
-             if self.quark is None:
-                r = []
-                r.append(struct.pack("<i", self.nVersion))
-                r.append(ser_uint256(self.hashPrevBlock))
-                r.append(ser_uint256(self.hashMerkleRoot))
-                r.append(struct.pack("<I", self.nTime))
-                r.append(struct.pack("<I", self.nBits))
-                r.append(struct.pack("<I", self.nNonce))
-                self.quark = uint256_from_str(quark_hash.getPoWHash(''.join(r)))
-             return self.quark
-    elif settings.COINDAEMON_ALGO == 'riecoin':
-         def calc_riecoin(self):
-             if self.riecoin is None:
-                r = []
-                r.append(struct.pack("<i", self.nVersion))
-                r.append(ser_uint256(self.hashPrevBlock))
-                r.append(ser_uint256(self.hashMerkleRoot))
-                r.append(struct.pack("<I", self.nBits))
-                r.append(struct.pack("<Q", self.nTime))
-                sha256 = uint256_from_str(SHA256.new(SHA256.new(''.join(r)).digest()).digest())
-                self.riecoin = riecoinPoW( sha256, uint256_from_compact(self.nBits), self.nNonce )
-             return self.riecoin
-    else:
-       def calc_sha256(self):
-           if self.sha256 is None:
-               r = []
-               r.append(struct.pack("<i", self.nVersion))
-               r.append(ser_uint256(self.hashPrevBlock))
-               r.append(ser_uint256(self.hashMerkleRoot))
-               r.append(struct.pack("<I", self.nTime))
-               r.append(struct.pack("<I", self.nBits))
-               r.append(struct.pack("<I", self.nNonce))
-               self.sha256 = uint256_from_str(SHA256.new(SHA256.new(''.join(r)).digest()).digest())
-           return self.sha256
-
+    def calc_jackpotcoin(self):
+        if self.jackpotcoin is None:
+            r = []
+            r.append(struct.pack("<i", self.nVersion))
+            r.append(ser_uint256(self.hashPrevBlock))
+            r.append(ser_uint256(self.hashMerkleRoot))
+            r.append(struct.pack("<I", self.nTime))
+            r.append(struct.pack("<I", self.nBits))
+            r.append(struct.pack("<I", self.nNonce))
+            r.append(struct.pack("<i", self.nSuperBlock))
+            r.append(struct.pack("<i", self.nRoundMask))
+            self.jackpotcoin = uint256_from_str(jackpotcoin_hash.gethash(''.join(r)))
+        return self.jackpotcoin
 
     def is_valid(self):
-        if settings.COINDAEMON_ALGO == 'riecoin':
-            self.calc_riecoin()
-        elif settings.COINDAEMON_ALGO == 'scrypt':
-            self.calc_scrypt()
-        elif settings.COINDAEMON_ALGO == 'quark':
-            self.calc_quark()
-        elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-            self.calc_jackpotcoin()
-        else:
-            self.calc_sha256()
-
-        if settings.COINDAEMON_ALGO == 'riecoin':
-            target = settings.POOL_TARGET
-        else:
-            target = uint256_from_compact(self.nBits)
-
-        if settings.COINDAEMON_ALGO == 'riecoin':
-            if self.riecoin < target:
-                return False
-        if settings.COINDAEMON_ALGO == 'scrypt':
-            if self.scrypt > target:
-                return False
-        elif settings.COINDAEMON_ALGO == 'quark':
-            if self.quark > target:
-                return False
-        elif settings.COINDAEMON_ALGO == 'jackpotcoin':
-            if self.jackpotcoin > target:
-                return False
-        else:
-           if self.sha256 > target:
-                return False
+        self.calc_jackpotcoin()
+        target = uint256_from_compact(self.nBits)
+        if self.jackpotcoin > target:
+            return False
 
         hashes = []
         for tx in self.vtx:
