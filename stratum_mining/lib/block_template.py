@@ -157,15 +157,16 @@ class BlockTemplate(halfnode.CBlock):
            r += struct.pack(">i", self.nRoundMask)
         return r   
            
-    def finalize(self, merkle_root_int, extranonce1_bin, extranonce2_bin, ntime, nonce, nsuperblock, nroundmask):
+    def finalize(self, merkle_root_int, extranonce1_bin, extranonce2_bin, ntime, nonce):
         '''Take all parameters required to compile block candidate.
         self.is_valid() should return True then...'''
         self.hashMerkleRoot = merkle_root_int
         self.nTime = ntime
         self.nNonce = nonce
+        """
         if settings.COINDAEMON_ALGO == 'jackpotcoin':
            self.SuperBlock = nsuperblock
            self.RoundMask = nroundmask
-
+        """
         self.vtx[0].set_extranonce(extranonce1_bin + extranonce2_bin)        
         self.sha256 = None # We changed block parameters, let's reset sha256 cache

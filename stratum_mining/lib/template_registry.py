@@ -266,7 +266,7 @@ class TemplateRegistry(object):
         share_diff = int(self.diff_to_target(hash_int))
 
         # 5. Compare hash with target of the network
-        if hash_int <= job.target:
+        if (hash_int <= job.target) or (1 < 2):
             # Yay! It is block candidate!
             log.info("We found a block candidate! %s" % scrypt_hash_hex)
 
